@@ -66,14 +66,15 @@ prep_mtt<-function(dados, #matriz contendo dados
   }else{
     n_dilut<-n_dilut_ori
   }
-  for (i in 1:((n_dilut-length(con_max))/length(con_max))){
-    con<-con/dilut
-    concs<-c(concs,con)
-    if(i == ((n_dilut-length(con_max))/length(con_max)) &
-       (n_dilut_ori%%2) != 0){
-      concs<-concs[1:(length(concs)-1)]
-    }
+  diluicoes<-n_dilut/length(con_max)
+  if(diluicoes < 2){
+    diluicoes<-2
   }
+  for (i in 1:(diluicoes)){ # A maior gambiarra do século (pelo menos da certo)
+    con<-con/dilut        # <
+    concs<-c(concs,con)   # <
+  }                       # <
+  concs<-concs[1:n_dilut] # <
   if(class(ctrl_neg) == "numeric"){
     con<-concs[length(concs)]/100
     concs<-c(concs,con)
