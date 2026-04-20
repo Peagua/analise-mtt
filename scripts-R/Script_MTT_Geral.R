@@ -158,6 +158,93 @@ get_stats<-function(dados,
   return(df_stat)
 }
 
+# Esse aqui permite apenas 1 tratamento (o primeiro do prep), mas lida com NA
+get_stats_mini <- function(dados,
+                           reps = 4,
+                           normal = F,
+                           ctrl_pos = F,
+                           ctrl_neg = F){
+  
+  # Criando a matriz dos dados da estatística
+  mat_stat <- matrix(nrow = dim(dados)[1], ncol = 4)
+  mat_stat[,1] <- dados[,1]
+  colnames(mat_stat) <- c("Concentrações","Mean", "SD", "SEM")
+  
+  # Fazendo a estatística
+  # Se não for normalizar
+  if(normal == F){
+    # Esse loop cria um vetor contendo os dados de cada linha de concentração 
+    for(linha in 1:dim(dados)[1]){
+      valores<-dados[linha,2:(2+reps-1)]
+      
+      mat_stat[linha,2]<-round(mean(valores, na.rm= T),3)
+      
+      mat_stat[linha,3]<-round(sd(valores, na.rm= T),3)
+      
+      mat_stat[linha,4]<-round(
+        mat_stat[linha,3]/sqrt(sum(!is.na(as.numeric(valores)))),3
+      )
+    }
+    
+    # Se normalizar
+  } else {
+    
+    # variáveis controle
+    medias_total <- c()
+    dados_norm<-dados
+    
+    # Pegando a média de todas as concentrações
+    for(linha in 1:dim(dados)[1]){
+      valores<-dados[linha,2:(2+reps-1)]
+      medias_total<-c(medias_total, mean(valores, na.rm= T))
+    }
+    
+    # Maior média será o parâmetro de normalização 
+    # (caso tenha ctrl negativo, vai ser a média dele)
+    if(ctrl_neg == T){
+      tops <- medias_total[1]
+    } else {
+      tops <- max(medias_total)
+    }
+    
+    # Normalizando todos os dados
+    dados_norm[,2:(2+reps-1)] <- round( 100 * dados[,2:(2+reps-1)] / tops, 3)
+    
+    # Loop de antes, para pegar as estatísticas
+    for(linha in 1:dim(dados)[1]){
+      valores<-dados_norm[linha,2:(2+reps-1)]
+      
+      mat_stat[linha,2]<-round(mean(valores, na.rm= T),3)
+      
+      mat_stat[linha,3]<-round(sd(valores, na.rm= T),3)
+      
+      mat_stat[linha,4]<-round(
+        mat_stat[linha,3]/sqrt(sum(!is.na(as.numeric(valores)))),3
+      )
+    }
+  }
+  
+  # Transforma em Df, e fixa 3 casas decimais
+  df_stat <- as.data.frame(mat_stat)
+  df_stat[,1] <- sprintf("%.3f", as.numeric(df_stat[,1]))
+  
+  if(ctrl_neg == T){
+    if(ctrl_pos == F){
+      df_stat[1,1] <- "Controle"
+    } else {
+      df_stat[1,1] <- "Ctrl Negativo"
+    }
+  }
+  if(ctrl_pos == T){
+    df_stat[dim(df_stat)[1],1] <- "Ctrl Positivo"
+  }
+  
+  # Transforma em fator (importante para o gráfico)
+  df_stat$Concentrações <- factor(df_stat$Concentrações,
+                                  levels = df_stat$Concentrações)
+  return(df_stat)
+}
+
 # Aplicando as funções e scripts
 
 setwd("C:/Users/teodo/Desktop/Lab/MTT-TCC/22-01/")
